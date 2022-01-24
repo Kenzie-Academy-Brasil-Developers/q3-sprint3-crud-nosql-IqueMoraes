@@ -1,5 +1,7 @@
+
 import pymongo
 import datetime
+from ipdb import set_trace
 
 
 url = "mongodb://localhost:27017/"
@@ -17,7 +19,7 @@ class Post:
         self.content = kwargs['content']
         self.tags = [tag.lower() for tag in kwargs['tags']]
         self.id = self.id_taken()
-        self.created_at = self.created_date()
+        self.created_at = datetime.datetime.now().isoformat()
         self.updated_at = ""
 
 
@@ -29,17 +31,21 @@ class Post:
         else:
             return 1
 
-    def created_date(self) -> None:
-        return datetime.datetime.now().isoformat()
-
-    def update_date(self) -> None:
-        self.update_at = datetime.datetime.now()
 
     def create_post(self) -> None:
         db.get_collection(collection).insert_one(self.__dict__)
+
     
     @staticmethod
-    def serialize_objectid(data):
+    def update_post(id: int, **kwargs) -> None:
+        update_date = datetime.datetime.now().isoformat()
+        kwargs.update({"updated_at": update_date})
+        return db.get_collection(collection).find_one_and_update({"id": id}, {"$set":kwargs})
+        
+
+    
+    @staticmethod
+    def serialize_objectid(data) -> None:
         if type(data) is list:
             for post in data:
                 post.update({"_id": str(post["_id"])})
@@ -48,10 +54,19 @@ class Post:
         elif type(data) is dict:
             data.update({"_id": str(data["_id"])})
 
-    
 
 
     @staticmethod
-    def get_posts() -> list:
-        posts_list = db.get_collection(collection).find()
+    def get_posts(id: int = None) -> list:
+        filter_key = {"id": id}
+        if id:
+            return db.get_collection(collection).find(filter_key)
+        else:
+            return db.get_collection(collection).find()
 
+    @staticmethod
+    def del_post(id: int):
+        filter_key = {"id": id}
+        return db.get_collection(collection).find_one_and_delete(filter_key)
+
+    

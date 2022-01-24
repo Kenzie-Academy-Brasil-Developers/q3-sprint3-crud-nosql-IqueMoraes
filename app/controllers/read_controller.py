@@ -1,16 +1,16 @@
-from flask import request, jsonify
-from app.models import post_class as Posts
-import pymongo
-import copy
+from http import HTTPStatus
+from flask import jsonify
+from app.models.post_class import Post as Post_class
 
-url = "mongodb://localhost:27017/"
-db_name = "kenzie"
-collection_name = "posts"
-client = pymongo.MongoClient(url)
-db = client[db_name]
 
-def reading_posts():
+def reading_posts(id: int = None):
+    try:
+        posts_list = list(Post_class.get_posts(id))
+        Post_class.serialize_objectid(posts_list)
+        if id and not posts_list:
+            return {"msg": "Não há nenhum post com o id indicado."}, HTTPStatus.NOT_FOUND
+        else:
+            return jsonify(posts_list), HTTPStatus.OK
     
-    lists = db.collection_name.find().limit(10)
-
-    print(lists)
+    except Exception as e:
+        return jsonify(e.args[0]), HTTPStatus.INTERNAL_SERVER_ERROR
